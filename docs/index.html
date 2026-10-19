@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RuedaConvert</title>
+  <meta name="description" content="Convierte archivos en tu Mac arrastrándolos y pulsando Shift. Gratis, sin internet y de código abierto.">
+  <link rel="icon" href="icon.png">
+  <style>
+    :root {
+      --fg: #1d1d1f; --muted: #6e6e73; --bg: #fbfbfd; --card: #ffffff; --line: #e5e5ea;
+      --accent: #e8452b; --accent-fg: #ffffff;
+      --wheel-seg: rgba(255,255,255,.82); --wheel-text: #3a2a26;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --fg: #f5f5f7; --muted: #a1a1a6; --bg: #111113; --card: #1c1c1e; --line: #2c2c2e;
+        --wheel-seg: rgba(255,255,255,.16); --wheel-text: #ffffff;
+      }
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; font: 17px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--fg); background: var(--bg); }
+    main { max-width: 760px; margin: 0 auto; padding: 48px 16px 72px; }
+    a { color: var(--accent); }
+
+    .hero { text-align: center; }
+    .hero img { width: 96px; height: 96px; }
+    .hero h1 { font-size: clamp(34px, 7vw, 48px); margin: 8px 0 4px; letter-spacing: -.02em; }
+    .hero p { color: var(--muted); font-size: 19px; margin: 0 auto; max-width: 520px; }
+    .download { display: inline-flex; align-items: center; gap: 10px; margin-top: 26px; padding: 14px 26px; border-radius: 999px;
+                background: var(--accent); color: var(--accent-fg); text-decoration: none; font-weight: 600; font-size: 18px; }
+    .download:hover { filter: brightness(1.08); }
+    .meta { color: var(--muted); font-size: 14px; margin-top: 10px; }
+
+    .stage { margin: 40px 0 8px; border-radius: 22px; padding: 28px 16px; display: flex; justify-content: center;
+             background: linear-gradient(135deg, #ffb03b, #f44c5c 70%, #b078c8); }
+    .stage svg { width: min(340px, 100%); height: auto; }
+    .seg { fill: var(--wheel-seg); }
+    .seg.hot { fill: #e23e1c; }
+    .lbl { font: 700 17px -apple-system, BlinkMacSystemFont, "SF Pro Rounded", sans-serif; fill: var(--wheel-text); text-anchor: middle; dominant-baseline: middle; }
+    .lbl.hot { fill: #fff; }
+
+    h2 { font-size: 24px; margin: 44px 0 12px; letter-spacing: -.01em; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 6px 22px 16px; }
+    ol, ul { padding-left: 22px; }
+    li { margin: 6px 0; }
+    .note { font-size: 15px; color: var(--muted); }
+    table { width: 100%; border-collapse: collapse; font-size: 16px; }
+    th, td { text-align: left; padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+    th { color: var(--muted); font-weight: 600; font-size: 14px; }
+    tr:last-child td { border-bottom: none; }
+    kbd { font: 600 14px -apple-system, sans-serif; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; background: var(--card); }
+    footer { color: var(--muted); font-size: 14px; margin-top: 48px; text-align: center; }
+    footer a { color: inherit; }
+  </style>
+</head>
+<body>
+<main>
+  <section class="hero">
+    <img src="icon.png" alt="">
+    <h1>RuedaConvert</h1>
+    <p>Arrastra un archivo, pulsa <kbd>⇧ Shift</kbd> y suéltalo en el formato que quieras. Así de simple.</p>
+    <a class="download" id="download" href="https://github.com/hebexort771/RuedaConvert/releases/latest/download/RuedaConvert-macOS.zip">
+      <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 2v11m0 0l-4.5-4.5M10 13l4.5-4.5M3 17h14" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Descargar para Mac
+    </a>
+    <div class="meta">Gratis · macOS 13 Ventura o más nuevo · Apple Silicon e Intel</div>
+  </section>
+
+  <div class="stage" aria-hidden="true">
+    <svg viewBox="0 0 300 300">
+      <circle cx="150" cy="150" r="146" fill="rgba(255,255,255,.22)" stroke="rgba(255,255,255,.7)" stroke-width="1.5"/>
+      <g id="wheel"></g>
+      <circle cx="150" cy="150" r="50" fill="rgba(255,255,255,.55)"/>
+      <text x="150" y="150" class="lbl" style="font-size:20px">✕</text>
+    </svg>
+  </div>
+
+  <h2>Instalar</h2>
+  <div class="card">
+    <ol>
+      <li>Pulsa <strong>Descargar para Mac</strong> y abre el archivo <code>RuedaConvert-macOS.zip</code>.</li>
+      <li>Arrastra <strong>RuedaConvert</strong> a tu carpeta <strong>Aplicaciones</strong>.</li>
+      <li>Ábrela. Si macOS dice que no puede comprobar la app, ve a <strong>Ajustes del Sistema → Privacidad y seguridad</strong>, baja hasta <em>Seguridad</em> y pulsa <strong>Abrir igualmente</strong>. Solo se hace una vez.</li>
+      <li>Aparecerá una ventana de bienvenida y el icono de RuedaConvert en la barra de menú, arriba a la derecha.</li>
+    </ol>
+    <p class="note">¿Por qué sale ese aviso? Apple lo muestra con las apps gratuitas que no se descargan desde la App Store. El código de RuedaConvert es público y puedes revisarlo en <a href="https://github.com/hebexort771/RuedaConvert">GitHub</a>.</p>
+  </div>
+
+  <h2>Cómo se usa</h2>
+  <div class="card">
+    <ol>
+      <li>Empieza a arrastrar un archivo desde Finder o el Escritorio.</li>
+      <li>Sin soltarlo, pulsa <kbd>⇧ Shift</kbd>: aparece la rueda bajo el cursor.</li>
+      <li>Suelta el archivo sobre el formato que quieras. El centro cancela.</li>
+    </ol>
+    <p class="note">Lo convertido se guarda en <strong>Descargas</strong>. Si prefieres que se guarde junto al original, abre el icono de la barra de menú → <strong>Ajustes… → Dar permiso a una carpeta</strong>.</p>
+  </div>
+
+  <h2>Qué convierte</h2>
+  <div class="card">
+    <table>
+      <tr><th>Arrastras</th><th>Obtienes</th></tr>
+      <tr><td>PDF</td><td>Word (DOCX), JPG, PNG, texto</td></tr>
+      <tr><td>Fotos: HEIC, JPG, PNG, WEBP, GIF, TIFF</td><td>JPG, PNG, HEIC, PDF, texto (lee el texto de la foto)</td></tr>
+      <tr><td>Documentos: Word, RTF, ODT, HTML, TXT</td><td>PDF, Word, TXT, RTF, HTML</td></tr>
+    </table>
+    <p class="note">Todo se convierte en tu Mac. Tus archivos nunca se suben a internet.</p>
+  </div>
+
+  <h2>Preguntas frecuentes</h2>
+  <div class="card">
+    <p><strong>No aparece la rueda.</strong> Comprueba que el icono de RuedaConvert está en la barra de menú y que <em>Activado</em> está marcado. Pulsa Shift mientras mantienes el archivo agarrado, no antes de empezar a arrastrar.</p>
+    <p><strong>Un PDF pasado a Word no conserva el diseño.</strong> RuedaConvert extrae el texto; columnas, tablas y posiciones exactas no se conservan.</p>
+    <p><strong>¿Funciona en Windows?</strong> Por ahora solo en Mac.</p>
+    <p><strong>¿Cómo la desinstalo?</strong> Sal desde el icono de la barra de menú y borra RuedaConvert de Aplicaciones.</p>
+  </div>
+
+  <h2>Contacto</h2>
+  <div class="card">
+    <p>¿Problemas o ideas? Abre un reporte en <a href="https://github.com/hebexort771/RuedaConvert/issues">GitHub Issues</a> y te respondo ahí.</p>
+  </div>
+
+  <footer>
+    © 2026 Heber Gomez · <a href="privacidad.html">Privacidad</a> · <a href="https://github.com/hebexort771/RuedaConvert">Código fuente</a> · Licencia MIT
+  </footer>
+</main>
+
+<script>
+  // Dibuja la rueda de ejemplo.
+  (function () {
+    var labels = ['DOCX', 'JPG', 'PNG', 'TXT'], hot = 1;
+    var cx = 150, cy = 150, rOut = 136, rIn = 62, gap = 6, ns = 'http://www.w3.org/2000/svg';
+    var g = document.getElementById('wheel');
+    function pt(r, deg) { var a = deg * Math.PI / 180; return [cx + r * Math.cos(a), cy - r * Math.sin(a)]; }
+    labels.forEach(function (label, i) {
+      var mid = 90 - i * 90, half = 45;
+      var aO = gap / rOut * 180 / Math.PI, aI = gap / rIn * 180 / Math.PI;
+      var p1 = pt(rOut, mid + half - aO), p2 = pt(rOut, mid - half + aO);
+      var p3 = pt(rIn, mid - half + aI), p4 = pt(rIn, mid + half - aI);
+      var path = document.createElementNS(ns, 'path');
+      path.setAttribute('d', 'M' + p1 + ' A' + rOut + ' ' + rOut + ' 0 0 1 ' + p2 +
+                             ' L' + p3 + ' A' + rIn + ' ' + rIn + ' 0 0 0 ' + p4 + ' Z');
+      path.setAttribute('class', 'seg' + (i === hot ? ' hot' : ''));
+      g.appendChild(path);
+      var c = pt((rIn + rOut) / 2, mid), text = document.createElementNS(ns, 'text');
+      text.setAttribute('x', c[0]); text.setAttribute('y', c[1]);
+      text.setAttribute('class', 'lbl' + (i === hot ? ' hot' : ''));
+      text.textContent = label;
+      g.appendChild(text);
+    });
+  })();
+</script>
+</body>
+</html>

@@ -1,0 +1,15 @@
+# macOS
+.DS_Store
+
+# Xcode
+build/
+DerivedData/
+xcuserdata/
+*.xcuserstate
+*.xcscmblueprint
+
+# Archivos generados al compilar
+*.ipa
+*.dSYM.zip
+*.dSYM
+RuedaConvert-macOS.zip

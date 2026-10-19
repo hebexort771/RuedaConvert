@@ -1,0 +1,66 @@
+# Compila RuedaConvert en un Mac de GitHub y adjunta el .zip a la versión publicada.
+#
+# Cómo se usa: en GitHub → Releases → "Draft a new release" → etiqueta v1.0 → Publish.
+# En unos minutos aparece RuedaConvert-macOS.zip en esa versión, y el botón
+# "Descargar para Mac" de la página web siempre apunta a la última.
+#
+# También puedes lanzarlo a mano (Actions → Compilar app → Run workflow) para
+# probar: el .zip queda como artefacto de esa ejecución.
+name: Compilar app
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Calcular versión
+        id: version
+        env:
+          TAG: ${{ github.event.release.tag_name }}
+        run: |
+          if [ -n "$TAG" ]; then
+            echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
+          else
+            echo "version=0.0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Compilar (Apple Silicon + Intel)
+        run: |
+          xcodebuild -project RuedaConvert.xcodeproj -scheme RuedaConvert \
+            -configuration Release -derivedDataPath build \
+            -destination 'generic/platform=macOS' \
+            ARCHS="arm64 x86_64" ONLY_ACTIVE_ARCH=NO \
+            CODE_SIGN_STYLE=Manual CODE_SIGN_IDENTITY="-" DEVELOPMENT_TEAM="" \
+            MARKETING_VERSION="${{ steps.version.outputs.version }}" \
+            CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+            build
+
+      - name: Empaquetar
+        run: |
+          APP="build/Build/Products/Release/RuedaConvert.app"
+          codesign --verify --deep --strict "$APP"
+          lipo -info "$APP/Contents/MacOS/RuedaConvert"
+          ditto -c -k --sequesterRsrc --keepParent "$APP" RuedaConvert-macOS.zip
+
+      - name: Adjuntar a la versión
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ github.event.release.tag_name }}
+        run: gh release upload "$TAG" RuedaConvert-macOS.zip --clobber
+
+      - name: Guardar como artefacto (ejecución manual)
+        if: github.event_name != 'release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: RuedaConvert-macOS
+          path: RuedaConvert-macOS.zip

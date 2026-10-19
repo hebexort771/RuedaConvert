@@ -66,6 +66,9 @@ jobs:
           if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
               --title "RuedaConvert ${TAG#v}" --notes-file .github/release-notes.md
+          elif [ -z "$(gh release view "$TAG" --repo "$GITHUB_REPOSITORY" --json body --jq .body)" ]; then
+            # Versión creada desde la web sin descripción: se le ponen las instrucciones.
+            gh release edit "$TAG" --repo "$GITHUB_REPOSITORY" --notes-file .github/release-notes.md
           fi
           gh release upload "$TAG" RuedaConvert-macOS.zip --repo "$GITHUB_REPOSITORY" --clobber
 

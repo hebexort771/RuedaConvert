@@ -1,20 +1,25 @@
-# Compila RuedaConvert en un Mac de GitHub y adjunta el .zip a la versión publicada.
+# Compila RuedaConvert en un Mac de GitHub y publica RuedaConvert-macOS.zip en Releases.
 #
-# Cómo se usa: en GitHub → Releases → "Draft a new release" → etiqueta v1.0 → Publish.
-# En unos minutos aparece RuedaConvert-macOS.zip en esa versión, y el botón
-# "Descargar para Mac" de la página web siempre apunta a la última.
+# Se activa con cualquier etiqueta que empiece con "v" (v1.0, v1.1…). La forma más fácil:
+# GitHub → Releases → "Draft a new release" → Choose a tag → escribe v1.1 → Publish.
+# En unos minutos el .zip aparece en esa versión, y el botón "Descargar para Mac"
+# de la página web siempre apunta a la última.
 #
 # También puedes lanzarlo a mano (Actions → Compilar app → Run workflow) para
 # probar: el .zip queda como artefacto de esa ejecución.
 name: Compilar app
 
 on:
-  release:
-    types: [published]
+  push:
+    tags: ["v*"]
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -25,9 +30,10 @@ jobs:
       - name: Calcular versión
         id: version
         env:
-          TAG: ${{ github.event.release.tag_name }}
+          REF_TYPE: ${{ github.ref_type }}
+          TAG: ${{ github.ref_name }}
         run: |
-          if [ -n "$TAG" ]; then
+          if [ "$REF_TYPE" = "tag" ]; then
             echo "version=${TAG#v}" >> "$GITHUB_OUTPUT"
           else
             echo "version=0.0" >> "$GITHUB_OUTPUT"
@@ -51,15 +57,20 @@ jobs:
           lipo -info "$APP/Contents/MacOS/RuedaConvert"
           ditto -c -k --sequesterRsrc --keepParent "$APP" RuedaConvert-macOS.zip
 
-      - name: Adjuntar a la versión
-        if: github.event_name == 'release'
+      - name: Publicar en Releases
+        if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
-          TAG: ${{ github.event.release.tag_name }}
-        run: gh release upload "$TAG" RuedaConvert-macOS.zip --clobber
+          TAG: ${{ github.ref_name }}
+        run: |
+          if ! gh release view "$TAG" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            gh release create "$TAG" --repo "$GITHUB_REPOSITORY" \
+              --title "RuedaConvert ${TAG#v}" --notes-file .github/release-notes.md
+          fi
+          gh release upload "$TAG" RuedaConvert-macOS.zip --repo "$GITHUB_REPOSITORY" --clobber
 
       - name: Guardar como artefacto (ejecución manual)
-        if: github.event_name != 'release'
+        if: github.ref_type != 'tag'
         uses: actions/upload-artifact@v4
         with:
           name: RuedaConvert-macOS
